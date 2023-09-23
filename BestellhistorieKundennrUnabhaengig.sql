@@ -29,7 +29,7 @@
 -- Herkunft dieses Scripts: https://github.com/Bongotainment/JTL-Queries
 
 -- Testkey
---DECLARE @key as int = 20
+-- DECLARE @key as int = 20
 
 
 
@@ -41,8 +41,8 @@ DECLARE @lieferadresse as INT = 0
 ;WITH Kunden AS(
 SELECT  TRIM(lower(cVorname)) as Vorname, 
 		TRIM(lower(cName)) as Nachname, 
-		TRIM(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(lower(cStrasse),'straﬂe','str.')
-		,'strasse','str.'),'str','str.'),'strase','str.'),'str..','str.')) as Straﬂe, 
+		TRIM(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(lower(cStrasse),'straﬂe','str')
+		,'strasse','str'),'str..','str'),'strase','str'),'str.','str')) as Straﬂe, 
 		TRIM(lower(cPLZ)) AS PLZ, 
 		tk.kKunde
 		FROM tkunde tk
@@ -83,5 +83,16 @@ INNER JOIN GleicheKundenFuerAuftrag gk
 	ON gk.kKunde = ta.kKunde
 LEFT JOIN tPlattform tp 
 	ON tp.nPlattform = ta.kPlattform
-INNER JOIN tAdresse tad 
-	ON tad.kKunde = ta.kKunde AND tad.nTyp = @lieferadresse
+INNER JOIN Verkauf.tAuftragAdresse tad 
+	ON tad.kAuftrag = ta.kAuftrag AND tad.nTyp = @lieferadresse
+GROUP BY CAST(ta.dErstellt AS smalldatetime), 
+		ta.cAuftragsNr, 
+		ta.cKundenNr, 
+		tp.cName,
+		tad.cAnrede,
+		tad.cVorname,
+		tad.cName, 
+		tad.cStrasse,
+		tad.cPLZ,
+		tad.cOrt,
+		tad.cLand 
