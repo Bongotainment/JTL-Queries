@@ -29,7 +29,7 @@
 -- Herkunft dieses Scripts: https://github.com/Bongotainment/JTL-Queries
 
 -- Testkey
- -- DECLARE @key as int = 20
+-- DECLARE @key as int = 20
 
 
 
@@ -93,7 +93,7 @@ SELECT CAST(ta.dErstellt AS smalldatetime) AS Erstellt,
 			WHEN 2 THEN 'Teilgeliefert'
 			WHEN 1 THEN 'Ausstehend'
 		END as Lieferstatus
-FROM [Verkauf].[lvAuftragsverwaltung] ta-- Verkauf.tAuftrag ta
+FROM [Verkauf].[lvAuftragsverwaltung] ta
 INNER JOIN GleicheKundenFuerAuftrag gk
 	ON gk.kKunde = ta.kKunde
 LEFT JOIN tPlattform tp 
