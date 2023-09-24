@@ -66,6 +66,7 @@ GleicheKundenFuerAuftrag AS (
 	INNER JOIN KundenAbgleichstabelle kat2 
 		ON kat.CustomerKey = kat2.CustomerKey
 	WHERE kat.kKunde = @kKunde
+	GROUP BY kat2.kKunde
 )
 SELECT CAST(ta.dErstellt AS smalldatetime) AS Erstellt, 
 		ta.cAuftragsNr AS Auftragsnummer, 
@@ -77,7 +78,10 @@ SELECT CAST(ta.dErstellt AS smalldatetime) AS Erstellt,
 		tad.cStrasse AS Straﬂe, 
 		tad.cPLZ AS PLZ, 
 		tad.cOrt AS Ort, 
-		tad.cLand AS Land
+		tad.cLand AS Land,
+		CAST(SUM(tap.fWertBruttoGesamtFixiert) as DECIMAL(10,2)) as [Brutto Gesamt],
+		CAST(SUM(tap.fWertNettoGesamtFixiert)as DECIMAL(10,2)) as [Netto Gesamt],
+		CASE ISNULL(tr.cRetoureNr,'') WHEN '' THEN 'Nein' ELSE tr.cRetoureNr END AS Retoure
 FROM Verkauf.tAuftrag ta
 INNER JOIN GleicheKundenFuerAuftrag gk
 	ON gk.kKunde = ta.kKunde
@@ -85,6 +89,10 @@ LEFT JOIN tPlattform tp
 	ON tp.nPlattform = ta.kPlattform
 INNER JOIN Verkauf.tAuftragAdresse tad 
 	ON tad.kAuftrag = ta.kAuftrag AND tad.nTyp = @lieferadresse
+INNER JOIN Verkauf.tAuftragPosition tap 
+	ON tap.kAuftrag = ta.kAuftrag
+LEFT JOIn tRMRetoure tr 
+	ON tr.kBestellung = ta.kAuftrag
 GROUP BY CAST(ta.dErstellt AS smalldatetime), 
 		ta.cAuftragsNr, 
 		ta.cKundenNr, 
@@ -95,4 +103,5 @@ GROUP BY CAST(ta.dErstellt AS smalldatetime),
 		tad.cStrasse,
 		tad.cPLZ,
 		tad.cOrt,
-		tad.cLand 
+		tad.cLand,
+		tr.cRetoureNr
