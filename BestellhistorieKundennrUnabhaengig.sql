@@ -29,7 +29,7 @@
 -- Herkunft dieses Scripts: https://github.com/Bongotainment/JTL-Queries
 
 -- Testkey
--- DECLARE @key as int = 20
+ -- DECLARE @key as int = 20
 
 
 
@@ -69,8 +69,8 @@ GleicheKundenFuerAuftrag AS (
 	GROUP BY kat2.kKunde
 )
 SELECT CAST(ta.dErstellt AS smalldatetime) AS Erstellt, 
-		ta.cAuftragsNr AS Auftragsnummer, 
-		ta.cKundenNr AS Kundennummer, 
+		ta.cAuftragsnummer AS Auftragsnummer, 
+		ta.cKundeNr AS Kundennummer, 
 		tp.cName AS Plattform,
 		tad.cAnrede AS Anrede,
 		tad.cVorname AS Vorname,
@@ -79,23 +79,32 @@ SELECT CAST(ta.dErstellt AS smalldatetime) AS Erstellt,
 		tad.cPLZ AS PLZ, 
 		tad.cOrt AS Ort, 
 		tad.cLand AS Land,
-		CAST(SUM(tap.fWertBruttoGesamtFixiert) as DECIMAL(10,2)) as [Brutto Gesamt],
-		CAST(SUM(tap.fWertNettoGesamtFixiert)as DECIMAL(10,2)) as [Netto Gesamt],
-		CASE ISNULL(tr.cRetoureNr,'') WHEN '' THEN 'Nein' ELSE tr.cRetoureNr END AS Retoure
-FROM Verkauf.tAuftrag ta
+		CAST(ta.fAuftragswertBrutto as DECIMAL(10,2)) as [Brutto Gesamt],
+		CAST(ta.fAuftragswertNetto  as DECIMAL(10,2)) as [Netto Gesamt],
+		CAST(ta.fGutgeschriebenerWert  as DECIMAL(10,2)) AS [Gutgeschriebener Wert],
+		CASE ISNULL(tr.cRetoureNr,'') WHEN '' THEN 'Nein' ELSE tr.cRetoureNr END AS Retoure,
+		CASE ta.nLieferstatus
+			WHEN 0 THEN 'Storniert'
+			WHEN 7 THEN 'Ohne Versand abgeschlossen'
+			WHEN 6 THEN 'Gutgeschrieben'
+			WHEN 5 THEN 'Verpackt und Versendet'
+			WHEN 4 THEN 'Teilversendet'
+			WHEN 3 THEN 'Lieferschein erstellt'
+			WHEN 2 THEN 'Teilgeliefert'
+			WHEN 1 THEN 'Ausstehend'
+		END as Lieferstatus
+FROM [Verkauf].[lvAuftragsverwaltung] ta-- Verkauf.tAuftrag ta
 INNER JOIN GleicheKundenFuerAuftrag gk
 	ON gk.kKunde = ta.kKunde
 LEFT JOIN tPlattform tp 
 	ON tp.nPlattform = ta.kPlattform
 INNER JOIN Verkauf.tAuftragAdresse tad 
 	ON tad.kAuftrag = ta.kAuftrag AND tad.nTyp = @lieferadresse
-INNER JOIN Verkauf.tAuftragPosition tap 
-	ON tap.kAuftrag = ta.kAuftrag
 LEFT JOIn tRMRetoure tr 
 	ON tr.kBestellung = ta.kAuftrag
 GROUP BY CAST(ta.dErstellt AS smalldatetime), 
-		ta.cAuftragsNr, 
-		ta.cKundenNr, 
+		ta.cAuftragsnummer,
+		ta.cKundeNr,
 		tp.cName,
 		tad.cAnrede,
 		tad.cVorname,
@@ -104,4 +113,8 @@ GROUP BY CAST(ta.dErstellt AS smalldatetime),
 		tad.cPLZ,
 		tad.cOrt,
 		tad.cLand,
-		tr.cRetoureNr
+		ta.fAuftragswertBrutto,
+		ta.fGutgeschriebenerWert,
+		ta.fAuftragswertNetto,
+		tr.cRetoureNr,
+		ta.nLieferstatus
