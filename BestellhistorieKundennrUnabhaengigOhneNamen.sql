@@ -34,7 +34,6 @@
 -- Sollte die Strasse nicht mit beachtet werden hier 0 eintragen.
 DECLARE @MatchStreet AS BIT = 1
 
-
 DECLARE @kKunde as INT
 SELECT @kKunde=kKunde FROM Verkauf.tAuftrag 
 WHERE kAuftrag = @key
@@ -61,7 +60,16 @@ SELECT [kKunde]
   WHERE nStandard = 1 --Ignoriere alle nicht Standardadressen, da sie bereits in den Auftragsadressen vorkommen
  ),
 AdressenGruppiert AS (
-	SELECT * FROM AlleAdressen
+	SELECT 
+	LOWER(cVorname) as Vorname, 
+		LOWER(cName) as Nachname, 
+		CASE WHEN @MatchStreet = 1 THEN
+		REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(lower(cStrasse),'straﬂe','str')
+		,'strasse','str'),'str..','str'),'strase','str'),'str.','str')
+		ELSE '' END AS Straﬂe, 
+		LOWER(cPLZ) AS PLZ,
+		kKunde
+	FROM AlleAdressen
 	GROUP BY [kKunde]
       ,[cVorname]
       ,[cName]
@@ -70,25 +78,13 @@ AdressenGruppiert AS (
       ,[cOrt]
       ,[cLand]
 ),
-Kunden AS(
-SELECT  LOWER(cVorname) as Vorname, 
-		LOWER(cName) as Nachname, 
-		CASE WHEN @MatchStreet = 1 THEN
-		REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(lower(cStrasse),'straﬂe','str')
-		,'strasse','str'),'str..','str'),'strase','str'),'str.','str')
-		ELSE '' END AS Straﬂe, 
-		LOWER(cPLZ) AS PLZ,
-		tk.kKunde
-		FROM tkunde tk
-	INNER JOIN AlleAdressen ta ON ta.kKunde = tk.kKunde 
-),
 KundenNullBereinigt AS (
 SELECT  ISNULL(Vorname,'') AS Vorname, 
 		ISNULL(Nachname,'') AS Nachname, 
 		ISNULL(Straﬂe,'') AS Straﬂe, 
 		ISNULL(PLZ,'') AS PLZ, 
 		kKunde
-		FROM Kunden
+		FROM AdressenGruppiert
 ),
 KundenEmptyBereinigt AS(
 	SELECT REPLACE(Vorname+Nachname+Straﬂe+PLZ, ' ','') AS CustomerKey, kKunde 
@@ -122,30 +118,6 @@ SELECT
 	--Start Spalte Plattform 
 		,tp.cName AS Plattform
 	--Ende Spalte Plattform 
-
-	--Start Spalte Vorname 
-		,tad.cVorname AS Vorname
-	--Ende Spalte Vorname
-
-	--Start Spalte Nachname 
-		,tad.cName AS Nachname
-	--Ende Spalte Nachname 
-
-	--Start Spalte Straﬂe 
-		,tad.cStrasse AS Straﬂe
-	--Ende Spalte Straﬂe 
-
-	--Start Spalte PLZ 
-		,tad.cPLZ AS PLZ
-	--Ende Spalte PLZ 
-
-	--Start Spalte Ort 
-		,tad.cOrt AS Ort
-	--Ende Spalte Ort 
-
-	--Start Spalte Land 
-		,tad.cLand AS Land
-	--Ende Spalte Land 
 
 	--Start Spalte [Brutto Gesamt] 
 		,CAST(ta.fAuftragswertBrutto as DECIMAL(10,2)) as [Brutto Gesamt]
@@ -185,12 +157,6 @@ GROUP BY CAST(ta.dErstellt AS smalldatetime),
 		ta.cAuftragsnummer,
 		ta.cKundeNr,
 		tp.cName,
-		tad.cVorname,
-		tad.cName, 
-		tad.cStrasse,
-		tad.cPLZ,
-		tad.cOrt,
-		tad.cLand,
 		ta.fAuftragswertBrutto,
 		ta.fGutgeschriebenerWert,
 		tr.cRetoureNr,
